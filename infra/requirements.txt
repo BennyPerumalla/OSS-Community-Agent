@@ -47,4 +47,4 @@ streamlit-aggrid>=0.3.4
 # Monitoring and system utilities
 psutil>=5.9.0
 
-apscheduler=3.11.0
+apscheduler==3.11.0

@@ -330,16 +330,18 @@ class DatabaseManager:
         Update the drafted reply for a specific request.
         """
         try:
-            conn = self.get_connection()
-            cursor = conn.cursor()
-            query = """
-                UPDATE requests
-                SET drafted_reply = %s
-                WHERE id = %s
-            """
-            cursor.execute(query, (draft, request_id))
-            conn.commit()
-            cursor.close()
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
+                    UPDATE requests
+                    SET drafted_reply = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                    """,
+                    (draft, request_id)
+                )
+                conn.commit()
+                print(f"Draft updated for request {request_id}")
         except Exception as e:
             print(f"Error updating draft for request {request_id}: {e}")
 

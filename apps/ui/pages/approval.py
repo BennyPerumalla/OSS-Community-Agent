@@ -5,6 +5,8 @@ import sys
 import os
 from utils.reddit_client import get_subreddit_data  # 🔑 Reddit data fetch
 from utils.scheduler import start_scheduler, ingest_unanswered_queries
+from utils.agent_integration import generate_draft_with_groq  # Groq API integration
+
 
 # Add parent directories to path for imports
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -108,13 +110,14 @@ def render_approval_page():
         # 🔥 Show live subreddit data when specific subreddit selected
         if subreddit_filter != "all":
             st.markdown(f"### 🔥 Trending in r/{subreddit_filter}")
-            reddit_data = get_subreddit_data(subreddit_filter, limit=5)
+            reddit_data = get_subreddit_data(subreddit_filter, limit=1)
             if isinstance(reddit_data, dict) and reddit_data.get("error"):
                 st.error(f"Error fetching subreddit: {reddit_data['error']}")
             else:
-                for post in reddit_data or []:
-                    st.markdown(f"- [{post.get('title', 'No Title')}]({post.get('url', '#')}) "
-                                f"(👍 {post.get('score', 0)} | u/{post.get('author', 'Unknown')})")
+                for post in reddit_data:
+                    st.markdown(
+                        f"- [{post['title']}]({post['url']}) (👍 {post['score']} | u/{post['author']})"
+                    )
 
     with col3:
         confidence_filter = st.selectbox(
@@ -138,7 +141,7 @@ def render_approval_page():
         target_subreddit = subreddit_filter if subreddit_filter != "all" else None
         if target_subreddit:
             # Just ingest queries without generating answers
-            new_requests = ingest_unanswered_queries(target_subreddit, limit=3)
+            new_requests = ingest_unanswered_queries(target_subreddit, limit=1)
             if new_requests:
                 st.success(f"Fetched {len(new_requests)} new unanswered queries from r/{target_subreddit}!")
                 # Append them to filtered_requests dynamically without waiting for rerun
@@ -151,6 +154,7 @@ def render_approval_page():
         st.rerun()
 
     # Get pending requests
+# Get pending requests first
     pending_requests = db.get_pending_requests()
     filtered_requests = apply_filters(pending_requests, subreddit_filter, confidence_filter, sort_option)
 
@@ -286,7 +290,7 @@ def render_request_review(request, db, index):
 
         # Extra context from subreddit
         st.markdown(f"### 🔗 Context from r/{request.get('subreddit', 'Unknown')}")
-        reddit_data = get_subreddit_data(request.get('subreddit', ''), limit=3)
+        reddit_data = get_subreddit_data(request.get('subreddit', ''), limit=1)
         if isinstance(reddit_data, dict) and reddit_data.get("error"):
             st.error(f"Error fetching subreddit: {reddit_data['error']}")
         else:

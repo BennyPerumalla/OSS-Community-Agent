@@ -360,27 +360,43 @@ class AgentIntegration:
         request['moderation_flags'] = flags
         self.db.add_request(request)
 
-    def approve_request(self, request_id: str, final_reply: str, post_to_reddit: bool = True) -> Dict[str, Any]:
-        """Approve a pending request and optionally post to Reddit via the agent tool.
-        Respects DRY_RUN; when dry-run is enabled, it won't post to Reddit.
-        Returns a result dict with posting status and messages.
+    def approve_request(
+        self,
+        request_id: str,
+        final_reply: str,
+        post_to_reddit: bool = True,
+        force_post: bool = False
+    ) -> Dict[str, Any]:
+        """
+        Approve a pending request and optionally post to Reddit.
+        - If dry_run is True, posting is skipped unless force_post=True.
+        - Always updates DB with approved status + reply.
         """
         req = self.db.get_request_by_id(request_id)
         if not req:
             return {"status": "error", "message": "Request not found"}
-        # Update DB first with final reply and approved status
-        self.db.update_request_status(request_id, 'approved', final_reply)
-        self.db.log_user_action('approve', request_id, 'admin', {'posted': not self.dry_run and post_to_reddit})
-        if not post_to_reddit or self.dry_run:
+
+        # Update DB with final reply and approved status
+        self.db.update_request_status(request_id, "approved", final_reply)
+        self.db.log_user_action(
+            "approve",
+            request_id,
+            "admin",
+            {"posted": post_to_reddit and (force_post or not self.dry_run)}
+        )
+
+        # Respect dry_run unless overridden
+        if not post_to_reddit or (self.dry_run and not force_post):
             return {"status": "dry_run", "message": "Approved (dry run), not posted to Reddit"}
+
         # Attempt to post to Reddit
+        submission_id = req.get("post_id")
+        if not submission_id:
+            return {"status": "error", "message": "Missing Reddit submission ID"}
+
         try:
-            from apps.agent.main import post_reddit_reply_tool
-            submission_id = req.get('post_id')
-            if not submission_id:
-                return {"status": "error", "message": "Missing Reddit submission ID"}
-            result = post_reddit_reply_tool(submission_id=submission_id, reply_text=final_reply)
-            # Optionally, we could update DB based on result
+            reddit_tool = self._get_reddit_tool()
+            result = reddit_tool.post_reply(submission_id=submission_id, reply_text=final_reply)
             return result or {"status": "unknown", "message": "No result returned"}
         except Exception as e:
             return {"status": "error", "message": str(e)}
@@ -424,11 +440,11 @@ def generate_draft_with_groq(query_text: str) -> str:
         completion = groq_client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=[
-                {"role": "system", "content": "You are a helpful AI agent drafting replies.you must cite your sources.answers must be accurate and safe and consise."},
+                {"role": "system", "content": "You are a helpful AI agent drafting replies.answers must be accurate and safe and consise.Be very much consise."},
                 {"role": "user", "content": query_text}
             ],
-            temperature=0.5,
-            max_completion_tokens=1024,
+            temperature=0.6,
+            max_completion_tokens=100,
             top_p=1,
             stream=True  # enable streaming chunks
         )
@@ -453,7 +469,7 @@ def generate_reply(self, request_id: int):
     if not req:
         return ""
     # Call Groq or your AI model here
-    reply = generate_draft_with_groq(req["post_content"])  # implement your Groq function
+    reply = generate_draft_with_ollama(req["post_content"])  # implement your Groq function
     return reply
 
 # Singleton instance for use throughout the UI

@@ -82,14 +82,12 @@ CHROMA_HOST = _env("CHROMA_HOST")
 CHROMA_API_KEY = _env("CHROMA_API_KEY")
 
 #--EMBEDDINGS--
-# Default to Ollama embeddings for local-first setup
-EMBED_PROVIDER = _env("EMBED_PROVIDER", "ollama").lower()
+# Default to OpenAI embeddings for production use
+EMBED_PROVIDER = _env("EMBED_PROVIDER", "openai").lower()
 EMBED_MODEL = _env("EMBED_MODEL", "nomic-embed-text")
-OPENAI_EMBED_MODEL = _env("OPENAI_EMBED_MODEL", "text-embedding-3-small")
 
 #--LLM Provider--
 LLM_PROVIDER = _env("LLM_PROVIDER", "none").lower()
-OPENAI_MODEL = _env("OPENAI_MODEL", "gpt-4o-mini")
 OLLAMA_LLM_MODEL = _env("OLLAMA_LLM_MODEL", "gemma3")
 GROQ_MODEL = _env("GROQ_MODEL", "llama-3.1-8b-instant")
 TOP_K = int(_env("TOP_K", "4"))
@@ -144,6 +142,13 @@ def _embedder():
     if EMBED_PROVIDER=="ollama":
         if not OllamaEmbeddings: raise ImportError("Install langchain-community")
         return OllamaEmbeddings(model=EMBED_MODEL)
+    elif EMBED_PROVIDER=="openai":
+        try:
+            from langchain_openai import OpenAIEmbeddings
+            return OpenAIEmbeddings(model=OPENAI_EMBED_MODEL)
+        except ImportError:
+            print("Warning: OpenAI embeddings not available, falling back to keyword search")
+            return None
     return None
 
 # --- LLM ---
@@ -178,14 +183,30 @@ class RAGTool:
             kwargs.update({"client_settings":{"chroma_api_impl":"rest","chroma_server_host":CHROMA_HOST,"chroma_server_http_port":443,"headers":{"Authorization":f"Bearer {CHROMA_API_KEY}"}}})
         else:
             kwargs["persist_directory"]=str(RAG_DB_DIR)
-        self.vectorstore=Chroma(**kwargs)
-        self.retriever=self.vectorstore.as_retriever(search_kwargs={"k":TOP_K})
-        if not self._has_docs():
-            self.rebuild()
+        try:
+            self.vectorstore=Chroma(**kwargs)
+            self.retriever=self.vectorstore.as_retriever(search_kwargs={"k":TOP_K})
+            if not self._has_docs():
+                self.rebuild()
+        except Exception as e:
+            print(f"Warning: ChromaDB setup failed: {e}")
+            print("Rebuilding vector store...")
+            try:
+                self.vectorstore=Chroma(**kwargs)
+                self.rebuild()
+                self.retriever=self.vectorstore.as_retriever(search_kwargs={"k":TOP_K})
+            except Exception as e2:
+                print(f"Error: Could not initialize ChromaDB: {e2}")
+                self.vectorstore = None
+                self.retriever = None
 
     def _has_docs(self): 
-        try: return self.vectorstore._collection.count()>0
-        except: return False
+        try: 
+            if not self.vectorstore:
+                return False
+            return self.vectorstore._collection.count()>0
+        except: 
+            return False
 
     def rebuild(self):
         # Always compute docs and update manifest, even if vector store disabled

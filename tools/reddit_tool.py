@@ -189,7 +189,8 @@ class RedditTool:
         try:
             # Get the submission object by its ID
             submission = self.reddit.submission(id=submission_id)
-
+            submission._fetch()  # Ensure the submission data is loaded
+            print(f"Preparing to reply to post ID: {submission_id} - Title: {submission.title}")
             # Check if the bot has already replied to avoid spamming
             def _list_comments():
                 # Force a comments fetch when available; handle simple list in tests
@@ -199,11 +200,14 @@ class RedditTool:
                     return list(comments_obj)
                 # If it's already a list-like (as in unit tests), just return it
                 return list(comments_obj) if isinstance(comments_obj, (list, tuple)) else []
+            print("Fetching existing comments to check for prior replies...")
 
             comments = self._with_backoff(_list_comments)
+            print(f"Fetched {len(comments)} comments.")
             me = self._with_backoff(lambda: self.reddit.user.me())
+            print(f"Authenticated as Reddit user: {getattr(me, 'name', 'unknown')}")
             has_replied = any(getattr(c, 'author', None) and getattr(c.author, 'name', None) == getattr(me, 'name', None) for c in comments)
-
+            print(f"Has already replied: {has_replied}")
             if has_replied:
                 return {"status": "skipped", "message": "Already replied to this post."}
 
