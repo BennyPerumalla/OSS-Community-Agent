@@ -10,14 +10,42 @@ current_dir = Path(__file__).parent
 if str(current_dir) not in sys.path:
     sys.path.insert(0, str(current_dir))
 
-# Import utilities and pages
-from utils.helpers import load_css, init_session_state
-from utils.agent_integration import agent_integration
-from pages.dashboard import render_dashboard
-from pages.approval import render_approval_page
-from pages.logs import render_logs_page
-from pages.monitor import render_monitor_page
-from pages.settings import render_settings_page
+# Import utilities and pages with error handling
+try:
+    from utils.scheduler import ingest_unanswered_queries
+except ImportError:
+    ingest_unanswered_queries = None
+
+try:
+    from utils.helpers import load_css, init_session_state
+except ImportError:
+    load_css = None
+    init_session_state = None
+
+try:
+    from utils.agent_integration import agent_integration
+except ImportError:
+    agent_integration = None
+
+try:
+    from pages.dashboard import render_dashboard
+    from pages.approval import render_approval_page
+    from pages.logs import render_logs_page
+    from pages.monitor import render_monitor_page
+    from pages.settings import render_settings_page
+except ImportError as e:
+    st.error(f"Failed to import page modules: {e}")
+    # Define fallback functions
+    def render_dashboard():
+        st.error("Dashboard page not available")
+    def render_approval_page():
+        st.error("Approval page not available")
+    def render_logs_page():
+        st.error("Logs page not available")
+    def render_monitor_page():
+        st.error("Monitor page not available")
+    def render_settings_page():
+        st.error("Settings page not available")
 
 def main():
     """Main Streamlit application"""
@@ -54,11 +82,16 @@ def main():
     )
     
     # Load custom CSS
-    css_path = current_dir / "styles" / "main.css"
-    load_css(str(css_path))
+    if load_css:
+        css_path = current_dir / "styles" / "main.css"
+        load_css(str(css_path))
     
     # Initialize session state
-    init_session_state()
+    if init_session_state:
+        init_session_state()
+    else:
+        if 'current_page' not in st.session_state:
+            st.session_state.current_page = 'dashboard'
     
     # Render the application
     render_app()
@@ -137,47 +170,59 @@ def render_sidebar():
     
     # Get agent health for quick stats
     try:
-        health = agent_integration.get_agent_health()
-        
-        # Pending requests
-        pending = health.get('pending_approvals', 0)
-        st.metric("Pending Reviews", pending, delta=None)
-        
-        # Today's requests
-        today_requests = health.get('total_requests_today', 0)
-        st.metric("Requests Today", today_requests, delta="+3 vs yesterday")
-        
-        # System status
-        status = health.get('status', 'unknown')
-        status_color = "🟢" if status == 'healthy' else "🟡" if status == 'warning' else "🔴"
-        st.markdown(f"**Status:** {status_color} {status.title()}")
+        if agent_integration:
+            health = agent_integration.get_agent_health()
+            
+            # Pending requests
+            pending = health.get('pending_approvals', 0)
+            st.metric("Pending Reviews", pending, delta=None)
+            
+            # Today's requests
+            today_requests = health.get('total_requests_today', 0)
+            st.metric("Requests Today", today_requests, delta="+3 vs yesterday")
+            
+            # System status
+            status = health.get('status', 'unknown')
+            status_color = "🟢" if status == 'healthy' else "🟡" if status == 'warning' else "🔴"
+            st.markdown(f"**Status:** {status_color} {status.title()}")
+        else:
+            # Show default stats when agent_integration is not available
+            st.metric("Pending Reviews", "N/A", delta=None)
+            st.metric("Requests Today", "N/A", delta=None)
+            st.markdown("**Status:** 🔴 Agent Offline")
         
     except Exception as e:
-        st.error(f"Error loading stats: {str(e)}")
+        st.warning(f"Agent integration unavailable: {str(e)}")
     
     # Quick actions section
     st.markdown("### ⚡ Quick Actions")
     
     # Manual scan button
     if st.button("🔍 Start Manual Scan", use_container_width=True):
-        with st.expander("Manual Scan Options", expanded=True):
-            subreddit = st.text_input("Subreddit", value="learnpython", placeholder="Enter subreddit name")
-            keywords = st.text_input("Keywords", value="", placeholder="Optional keywords")
-            
-            if st.button("🚀 Start Scan"):
-                run_id = agent_integration.start_agent_monitoring(subreddit, keywords)
-                st.success(f"✅ Manual scan started! Run ID: `{run_id[:8]}...`")
-                st.info("Check the Monitor page for real-time progress.")
+        if agent_integration:
+            with st.expander("Manual Scan Options", expanded=True):
+                subreddit = st.text_input("Subreddit", value="learnpython", placeholder="Enter subreddit name")
+                keywords = st.text_input("Keywords", value="", placeholder="Optional keywords")
+                
+                if st.button("🚀 Start Scan"):
+                    run_id = agent_integration.start_agent_monitoring(subreddit, keywords)
+                    st.success(f"✅ Manual scan started! Run ID: `{run_id[:8]}...`")
+                    st.info("Check the Monitor page for real-time progress.")
+        else:
+            st.warning("⚠️ Agent integration not available. Please check configuration.")
     
     # Emergency stop
     if st.button("⏹️ Emergency Stop", use_container_width=True, type="secondary"):
-        st.warning("⚠️ This would stop all active agent processes.")
-        if st.button("⚠️ Confirm Stop", type="secondary"):
-            # Stop all active runs
-            active_runs = agent_integration.get_all_active_runs()
-            for run in active_runs:
-                agent_integration.stop_agent_run(run['id'])
-            st.success("✅ All agent processes stopped.")
+        if agent_integration:
+            st.warning("⚠️ This would stop all active agent processes.")
+            if st.button("⚠️ Confirm Stop", type="secondary"):
+                # Stop all active runs
+                active_runs = agent_integration.get_all_active_runs()
+                for run in active_runs:
+                    agent_integration.stop_agent_run(run['id'])
+                st.success("✅ All agent processes stopped.")
+        else:
+            st.info("ℹ️ No active agent processes to stop.")
     
     # System info section
     st.markdown("---")
@@ -283,7 +328,6 @@ if __name__ == "__main__":
             Script Path: {__file__}
             
             Environment Variables:
-            OPENAI_API_KEY: {'Set' if os.getenv('OPENAI_API_KEY') else 'Not Set'}
             REDDIT_CLIENT_ID: {'Set' if os.getenv('REDDIT_CLIENT_ID') else 'Not Set'}
             
             Error Details:

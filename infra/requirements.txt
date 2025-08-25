@@ -6,6 +6,8 @@
 # portia-sdk-python  # Requires Python 3.11+
 # Alternative: Use a different agent framework or upgrade Python
 
+portia-sdk-python
+
 # User Interface
 streamlit>=1.28.0
 plotly>=5.17.0
@@ -19,7 +21,6 @@ spacy>=3.7.0
 beautifulsoup4>=4.12.0
 nltk>=3.8.0
 langchain>=0.1.0
-langchain-openai>=0.1.0
 langchain-community>=0.0.20
 langchain-groq>=0.1.0
 
@@ -45,3 +46,5 @@ streamlit-aggrid>=0.3.4
 
 # Monitoring and system utilities
 psutil>=5.9.0
+
+apscheduler=3.11.0

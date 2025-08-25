@@ -1,8 +1,7 @@
-# apps/ui/utils/database.py
-
 import json
 import sqlite3
 import os
+import uuid
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 from pathlib import Path
@@ -131,6 +130,21 @@ class DatabaseManager:
                 json.dumps(request_data.get('citations', []))
             ))
             return request_data.get('id')
+    
+    def insert_request(self, request_data: Dict[str, Any]) -> str:
+        """
+        Compatibility wrapper for add_request.
+        Ensures unique ID and avoids duplicate post_ids.
+        """
+        # Avoid duplicate Reddit post ingestion
+        if self.request_exists_by_post_id(request_data.get("post_id")):
+            return request_data.get("id") or request_data.get("post_id")
+        
+        # Ensure a unique ID
+        if not request_data.get("id"):
+            request_data["id"] = str(uuid.uuid4())
+        
+        return self.add_request(request_data)
     
     def update_request_status(self, request_id: str, status: str, 
                             final_reply: str = None, human_feedback: str = None):
@@ -299,6 +313,35 @@ class DatabaseManager:
                 SELECT 1 FROM requests WHERE post_id = ? LIMIT 1
             ''', (post_id,))
             return cursor.fetchone() is not None
+    
+    def get_request_by_post_id(self, post_id: str) -> Optional[Dict[str, Any]]:
+        """Get a request by Reddit post_id"""
+        if not post_id:
+            return None
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.execute('''
+                SELECT * FROM requests WHERE post_id = ? LIMIT 1
+            ''', (post_id,))
+            row = cursor.fetchone()
+            return dict(row) if row else None
+    def update_request_draft(self, request_id: int, draft: str):
+        """
+        Update the drafted reply for a specific request.
+        """
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            query = """
+                UPDATE requests
+                SET drafted_reply = %s
+                WHERE id = %s
+            """
+            cursor.execute(query, (draft, request_id))
+            conn.commit()
+            cursor.close()
+        except Exception as e:
+            print(f"Error updating draft for request {request_id}: {e}")
 
     # -----------------------------
     # Agent Settings

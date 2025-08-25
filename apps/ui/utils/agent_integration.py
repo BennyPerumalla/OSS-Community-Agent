@@ -9,6 +9,9 @@ from typing import Dict, Any, Optional, List
 from datetime import datetime
 import threading
 import json
+import requests
+
+import portia  # Ensure Portia package is importable
 
 # Ensure 'apps/ui' is on sys.path so 'utils' package can be imported reliably
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -390,6 +393,68 @@ class AgentIntegration:
         self.db.update_request_status(request_id, 'rejected', human_feedback=reason)
         self.db.log_user_action('reject', request_id, 'admin', {'reason': reason})
         return {"status": "success", "message": "Request rejected"}
+
+def generate_draft_with_ollama(query: str, model: str = "gemma3"):
+    """Generate draft reply using Ollama running locally"""
+    try:
+        resp = requests.post(
+            "http://localhost:11434/api/generate",
+            json={"model": model, "prompt": f"Answer this Reddit question:\n\n{query}"}
+        )
+        data = resp.json()
+        return data.get("response", "").strip()
+    except Exception as e:
+        return f"[Error generating draft: {e}]"
+
+from groq import Groq
+
+# Initialize the client once
+groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+if(groq_client is None):
+    raise ValueError("GROQ_API_KEY environment variable is not set or invalid.")
+
+def generate_draft_with_groq(query_text: str) -> str:
+    """
+    Generate a draft reply using Groq Python client (streaming version)
+    """
+    if not query_text:
+        return ""
+
+    try:
+        completion = groq_client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {"role": "system", "content": "You are a helpful AI agent drafting replies.you must cite your sources.answers must be accurate and safe and consise."},
+                {"role": "user", "content": query_text}
+            ],
+            temperature=0.5,
+            max_completion_tokens=1024,
+            top_p=1,
+            stream=True  # enable streaming chunks
+        )
+
+        # Collect streamed content
+        draft_text = ""
+        for chunk in completion:
+            delta = chunk.choices[0].delta
+            if delta and hasattr(delta, "content") and delta.content:
+                draft_text += delta.content
+                print(delta.content, end="")  # optional debug streaming
+        print()  # newline after stream
+        return draft_text.strip()
+
+    except Exception as e:
+        print(f"⚠️ Groq API error: {e}")
+        return "⚠️ Unable to generate draft at the moment (Groq API error)."
+    
+def generate_reply(self, request_id: int):
+    """Generate AI response for a single request"""
+    req = self.db.get_request_by_id(request_id)
+    if not req:
+        return ""
+    # Call Groq or your AI model here
+    reply = generate_draft_with_groq(req["post_content"])  # implement your Groq function
+    return reply
 
 # Singleton instance for use throughout the UI
 agent_integration = AgentIntegration()

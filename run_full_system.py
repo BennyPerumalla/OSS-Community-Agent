@@ -90,7 +90,7 @@ def main():
     parser.add_argument(
         "--subreddits",
         type=str,
-        default=os.getenv("MONITOR_SUBREDDITS", "learnpython"),
+        default=os.getenv("MONITOR_SUBREDDITS", "oss_test"),
         help="Comma-separated subreddits to monitor (default from MONITOR_SUBREDDITS or 'learnpython')",
     )
     parser.add_argument(

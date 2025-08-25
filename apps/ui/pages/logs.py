@@ -185,7 +185,7 @@ def get_filtered_data(db):
         
         # Moderation score filter
         moderation_score = request.get('moderation_score', 0)
-        if moderation_score > st.session_state.get('moderation_threshold', 1.0):
+        if moderation_score is not None and moderation_score > st.session_state.get('moderation_threshold', 1.0):
             continue
         
         filtered_requests.append(request)

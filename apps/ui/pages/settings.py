@@ -288,7 +288,7 @@ def render_agent_settings():
     
     # Initialize session_state storage for subreddits
     if "monitored_subreddits" not in st.session_state:
-        st.session_state.monitored_subreddits = ["python", "learnpython", "django"]
+        st.session_state.monitored_subreddits = ["oss_test"]
 
     # Basic Agent Settings
     with st.expander("⚙️ Basic Settings", expanded=True):
