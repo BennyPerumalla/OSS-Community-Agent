@@ -1,137 +1,432 @@
 # OSS Community Auto-Responder 🤖
 
-### An AI agent to help open-source maintainers manage community support on Reddit, grounded in project documentation.
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Portia AI](https://img.shields.io/badge/Portia%20AI-Integrated-green.svg)](https://portia.ai)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/status-Production%20Ready-brightgreen.svg)]()
 
+> An intelligent AI agent that helps open-source maintainers scale community support on Reddit while maintaining complete human oversight and control.
 
-## 💡 The Problem
+## 📋 Table of Contents
 
-Open-source project maintainers spend countless hours answering repetitive questions across forums like Reddit, Quora, and Discord. This not only consumes valuable time that could be spent on development but also leads to burnout and delayed responses for community members.
+- [Overview](#-overview)
+- [Features](#-features)
+- [Architecture](#-architecture)
+- [Quick Start](#-quick-start)
+- [Installation](#-installation)
+- [Configuration](#-configuration)
+- [Usage](#-usage)
+- [Project Structure](#-project-structure)
+- [API Documentation](#-api-documentation)
+- [Testing](#-testing)
+- [Contributing](#-contributing)
+- [Roadmap](#-roadmap)
+- [Support](#-support)
+- [License](#-license)
 
-## ✨ Our Solution: Human-in-the-Loop Auto-Responder
+## 🎯 Overview
 
-The OSS Community Auto-Responder is a safe, controllable AI agent designed to alleviate this burden. Using the **Portia AI** framework, it autonomously:
-1.  **Watches** for new questions about a project on Reddit.
-2.  **Drafts** a high-quality, doc-grounded answer.
-3.  **Pauses** for human approval.
-4.  **Posts** the reply only after the maintainer gives the final okay.
+### The Problem
 
-This approach ensures that maintainers retain complete control over all public-facing communication while saving significant time. The entire process is auditable and transparent, from the agent's explicit **plan** to the final, human-approved post.
+Open-source maintainers spend countless hours answering repetitive questions across forums like Reddit, Discord, and GitHub. This leads to:
 
-## 🚀 Key Features
+- ⏰ **Time Drain**: Hours spent on repetitive support tasks
+- 🔥 **Maintainer Burnout**: Exhaustion from constant community management
+- ⏳ **Delayed Responses**: Community members wait longer for help
+- 📉 **Reduced Development Time**: Less time for actual project development
 
-* **Portia-Powered Agentic Workflow:** Our agent uses Portia's core features to orchestrate complex tasks, including `Plan` creation, stateful execution, and `Clarification` for human-in-the-loop (HITL) control. This is the **central, mandatory component** of our submission.
-* **Documentation-Grounded Replies (RAG):** The agent indexes a project's documentation, wiki, and FAQs to generate accurate and trustworthy responses with clear citations.
-* **Multi-Tool Integration:** The agent leverages a custom **Reddit Tool** (using PRAW) and a local **RAG Tool** to perform its tasks.
-* **Simple, Transparent UX:** A single-screen Streamlit UI makes the agent's plan, proposed actions, and approval workflow obvious in seconds, demonstrating a clear and safe process.
+### Our Solution
 
-***
+The OSS Community Auto-Responder is a **human-in-the-loop AI agent** that:
 
-## 💻 Tech Stack
+1. 🔍 **Monitors** Reddit for relevant questions about your project
+2. 🧠 **Generates** intelligent responses using your project documentation
+3. ⏸️ **Pauses** for human approval before posting anything
+4. ✅ **Posts** only after maintainer review and approval
+5. 📊 **Tracks** all activities with complete transparency
 
-* **Agent Framework:** Portia AI SDK
-* **Frontend:** Streamlit
-* **Backend:** Python 3.11+
-* **Tools:**
-    * **Reddit Tool:** PRAW
-    * **RAG Tool:** Custom implementation
-    * **Moderation Tool:** Custom lightweight filters
-    * **Scraping:** (Optional) ScrapeGraphAI
+## ✨ Features
 
-***
+### 🤖 AI-Powered Intelligence
 
-## 📁 Project Structure
-```py
-oss-community-agent/
-├── apps/
-│   ├── agent/
-│   │   └── main.py                     # Main agent orchestration logic (Portia)
-│   └── ui/
-│       └── streamlit_app.py            # Streamlit UI for the demo
-├── data/
-│   └── corpus/                         # Place for project documentation, wiki, etc.
-│       └── example_doc.md
-├── infra/
-│   ├── .env.example                    # Template for environment variables
-│   └── requirements.txt                # All Python dependencies
-├── tools/
-│   ├── moderation_tool.py              # Safety and guardrails
-│   ├── rag_tool.py                     # Retrieval-Augmented Generation logic
-│   ├── reddit_tool.py                  # PRAW wrapper for Reddit API
-│   └── scrape_tool.py                  # (Optional) ScrapeGraphAI web scraper
-├── .gitignore                          # Git ignore file
-├── README.md                           # This file
-└── README_DEMO.md                      # Step-by-step demo script (optional, see README_DEMO.md if present)
-```
+- **Portia AI Integration**: Modern agent orchestration framework
+- **RAG System**: Retrieval-Augmented Generation using project documentation
+- **Multi-LLM Support**: Groq, OpenAI, Ollama compatibility
+- **Content Moderation**: Built-in safety and appropriateness checks
 
-***
+### 🛡️ Safety & Control
 
-## ⚙️ Getting Started
+- **Human-in-the-Loop**: Mandatory admin approval for all responses
+- **DRY_RUN Mode**: Safe testing without live posting
+- **Content Filtering**: Automatic moderation and safety checks
+- **Audit Trail**: Complete logging of all decisions and actions
+
+### 🎛️ Management Interface
+
+- **Streamlit Dashboard**: Professional web-based admin interface
+- **Real-time Monitoring**: Live statistics and system health
+- **Approval Queue**: Easy review and management of pending responses
+- **Analytics**: Performance metrics and community engagement tracking
+
+### 🔧 Technical Features
+
+- **Rate Limiting**: Respects Reddit API limits automatically
+- **Error Handling**: Comprehensive error recovery and resilience
+- **Database Persistence**: SQLite-based request and response tracking
+- **Configuration Management**: Environment-based settings
+
+## Core Components
+
+- **Agent Layer**: Portia AI orchestration and workflow management
+- **Tool Ecosystem**: Reddit integration, RAG system, and moderation tools
+- **Approval System**: Human-in-the-loop review and approval workflow
+- **Data Layer**: SQLite database for persistence and analytics
+- **UI Layer**: Streamlit web interface for admin management
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
-* Python 3.11 or newer (required by `portia-sdk-python`).
-* A Reddit API account with a registered script app.
-* A virtual environment manager (`uv` is recommended).
+- Python 3.11 or newer
+- Reddit API credentials
+- Virtual environment manager (recommended: `uv`)
 
-### Installation
+### 1-Minute Setup
 
-1.  **Clone the repository:**
-    ```bash
-    git clone [https://github.com/BennyPerumalla/oss-community-agent.git](https://github.com/BennyPerumalla/oss-community-agent.git)
-    cd oss-community-agent
-    ```
-2.  **Create and activate a virtual environment with a compatible Python version:**
-    ```bash
-    uv venv
-    uv pip install -r infra/requirements.txt
-    ```
-    * On Windows, activate with: `.venv\Scripts\activate`
+```bash
+# Clone the repository
+git clone https://github.com/BennyPerumalla/oss-community-agent.git
+cd oss-community-agent
 
-3.  **Configure environment variables:**
-    * Copy the example file: `cp infra/.env.example infra/.env`
-    * Open `infra/.env` and fill in your Reddit API credentials and set `DRY_RUN=True` for initial testing.
+# Create virtual environment
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-### Running the Demo
+# Install dependencies
+uv pip install -r infra/requirements.txt
 
-1.  Windows (PowerShell):
-    - UI only: `pwsh -ExecutionPolicy Bypass -File .\start.ps1 -UIOnly`
-    - Full system (UI + backend): `pwsh -ExecutionPolicy Bypass -File .\start.ps1`
+# Configure environment
+cp .env.example .env
+# Edit .env with your API credentials
 
-2.  Cross-platform via Python launchers:
-    - UI only: `python run_ui.py`
-    - Full system: `python run_full_system.py`
+# Run the system
+python run_full_system.py
+```
 
-3.  Direct Streamlit (advanced):
-    ```bash
-    python -m streamlit run apps/ui/streamlit_app.py
-    ```
-4.  A web browser will open, and you'll see the agent's UI. This interface is the core of your demo.
+## 📦 Installation
 
-***
+### Method 1: Using uv (Recommended)
 
-## 🗺️ Roadmap & Future Improvements
+```bash
+# Install uv if you haven't already
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-* Integrate a vector database (e.g., ChromaDB, Milvus) for more advanced and efficient RAG.
-* Add support for other platforms like Discord or Slack for approval notifications.
-* Implement metrics and dashboards to show time saved and maintainer engagement over time.
+# Clone and setup
+git clone https://github.com/BennyPerumalla/oss-community-agent.git
+cd oss-community-agent
+uv venv
+uv pip install -r infra/requirements.txt
+```
 
-***
+### Method 2: Using pip
 
-## 🏆 AgentHack 2025 Submission Checklist
+```bash
+git clone https://github.com/BennyPerumalla/oss-community-agent.git
+cd oss-community-agent
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r infra/requirements.txt
+```
 
-* ✅ **Portia AI:** The project is built on the Portia framework, leveraging its core `Plan` and `Clarification` features.
-* ✅ **Implementation Quality:** The project includes multiple tools and a clear, functional architecture.
-* ✅ **Creativity & Originality:** The human-in-the-loop, doc-grounded, cross-forum approach is a unique solution to a common OSS problem.
-* ✅ **Potential Impact:** The project addresses a clear pain point for maintainers, with metrics to demonstrate time savings.
-* ✅ **Aesthetics & UX:** The Streamlit UI provides a clean, auditable view of the agent's workflow.
+### Method 3: Using Poetry
 
-***
+```bash
+git clone https://github.com/BennyPerumalla/oss-community-agent.git
+cd oss-community-agent
+poetry install
+poetry shell
+```
 
-## 📧 Contact
+## ⚙️ Configuration
 
-For questions or support, please open a GitHub issue or contact us directly.
+### Environment Variables
 
-- Benny Perumalla <benny01r@gmail.com>
-- Md. Irshad Siddi <mohammadirshadsiddi@gmail.com>
-- Sukesh Reddy <lyricsofsongs96@gmail.com>
-- Hareeswar Reddy <ahreddy05@gmail.com>
+Create a `.env` file in the project root:
+
+```bash
+# Reddit API Configuration
+REDDIT_CLIENT_ID=your_reddit_client_id
+REDDIT_CLIENT_SECRET=your_reddit_client_secret
+REDDIT_USERNAME=your_reddit_username
+REDDIT_PASSWORD=your_reddit_password
+
+# AI/LLM Configuration
+GROQ_API_KEY=your_groq_api_key
+LLM_PROVIDER=groq
+GROQ_MODEL=llama-3.1-8b-instant
+
+# Safety Settings
+DRY_RUN=true  # Set to false for live posting
+AUTO_APPROVAL=false  # Keep human approval required
+
+# Database Configuration
+DATABASE_PATH=data/agent_data.db
+
+# RAG Configuration
+RAG_CORPUS_DIR=data/corpus
+RAG_DB_DIR=rag_db
+```
+
+### Reddit API Setup
+
+1. Go to [Reddit App Preferences](https://www.reddit.com/prefs/apps)
+2. Click "Create App" or "Create Another App"
+3. Choose "script" as the app type
+4. Note down your `client_id` and `client_secret`
+5. Use your Reddit username and password
+
+### Groq API Setup
+
+1. Visit [Groq Console](https://console.groq.com/)
+2. Create an account and generate an API key
+3. Add the key to your `.env` file
+
+## 🎮 Usage
+
+### Running the System
+
+#### Option 1: Full System (Recommended)
+
+```bash
+python run_full_system.py
+```
+
+Starts both the agent and web interface.
+
+#### Option 2: Web Interface Only
+
+```bash
+python run_ui.py
+# or
+python -m streamlit run apps/ui/streamlit_app.py
+```
+
+Access the admin dashboard at `http://localhost:8501`
+
+#### Option 3: Agent Only
+
+```bash
+python apps/agent/main.py --query "Python help" --subreddit "learnpython"
+```
+
+### Using the Web Interface
+
+1. **Dashboard**: Overview of system status and statistics
+2. **Approval Queue**: Review and approve pending responses
+3. **Request Logs**: Search and filter all processed requests
+4. **Monitor**: Real-time agent status and health
+5. **Settings**: Configure system parameters and APIs
+
+### Command Line Usage
+
+```bash
+# Run agent with specific parameters
+python apps/agent/main.py \
+  --query "Python programming help" \
+  --subreddit "learnpython" \
+  --mode single
+
+# Start monitoring session
+python apps/agent/main.py \
+  --query "Python help" \
+  --subreddit "learnpython" \
+  --mode monitor \
+  --duration 60
+
+# Check system status
+python apps/agent/main.py --mode status
+```
+
+## 📁 Project Structure
+
+```
+oss-community-agent/
+├── 📱 apps/
+│   ├── 🤖 agent/
+│   │   └── main.py                    # Main agent orchestration
+│   └── 🖥️ ui/
+│       ├── streamlit_app.py           # Web interface
+│       ├── pages/                     # UI components
+│       │   ├── dashboard.py
+│       │   ├── approval.py
+│       │   ├── logs.py
+│       │   ├── monitor.py
+│       │   └── settings.py
+│       └── utils/                     # UI utilities
+│           ├── approval_workflow.py   # Core workflow logic
+│           ├── database.py            # Database management
+│           └── agent_integration.py   # Agent integration
+├── 🛠️ tools/
+│   ├── reddit_tool.py                 # Reddit API integration
+│   ├── rag_tool.py                    # RAG system
+│   ├── moderation_tools.py            # Content moderation
+│   └── scrape_tool.py                 # Web scraping (optional)
+├── 📊 data/
+│   ├── corpus/                        # Project documentation
+│   │   ├── faq.md
+│   │   ├── getting_started.md
+│   │   ├── python_basics.md
+│   │   └── web_development.md
+│   └── agent_data.db                  # SQLite database
+├── 🧪 tests/
+│   ├── test_agent.py
+│   ├── test_tools.py
+│   └── test_comprehensive.py
+├── 📚 docs/
+│   ├── API.md
+│   ├── DEPLOYMENT.md
+│   └── CONTRIBUTING.md
+├── ⚙️ infra/
+│   ├── requirements.txt               # Python dependencies
+│   └── .env.example                   # Environment template
+├── 🚀 run_*.py                        # System launchers
+├── 🧪 test_*.py                       # Test scripts
+└── 📄 README.md                       # This file
+```
+
+## 🧪 Testing
+
+### Run All Tests
+
+```bash
+python run_tests.py
+```
+
+### Individual Test Suites
+
+```bash
+# Test core workflow
+python test_workflow.py
+
+# Test Reddit integration
+python test_reddit_posting.py
+
+# Test RAG system
+python test_rag_simple.py
+
+# Interactive demo
+python demo_approval_workflow.py
+```
+
+### Test Coverage
+
+- ✅ Reddit API integration
+- ✅ RAG system functionality
+- ✅ Approval workflow
+- ✅ Database operations
+- ✅ Error handling
+- ✅ End-to-end scenarios
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+### Development Setup
+
+```bash
+# Fork and clone the repository
+git clone https://github.com/your-username/oss-community-agent.git
+cd oss-community-agent
+
+# Create development environment
+uv venv
+uv pip install -r infra/requirements.txt
+uv pip install -r infra/requirements-dev.txt
+
+# Run tests
+python run_tests.py
+
+# Start development server
+python run_ui.py
+```
+
+### Code Style
+
+- Follow PEP 8 guidelines
+- Use type hints where appropriate
+- Write comprehensive docstrings
+- Include tests for new features
+
+
+## 🆘 Support
+
+### Getting Help
+
+- 🐛 **Bug Reports**: [Open an issue](https://github.com/BennyPerumalla/oss-community-agent/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/BennyPerumalla/oss-community-agent/discussions)
+- 📧 **Email**: Contact the maintainers directly
+
+### Common Issues
+
+#### Reddit API Errors
+
+- Verify your credentials in `.env`
+- Check Reddit API rate limits
+- Ensure your Reddit app is configured as "script"
+
+#### RAG System Issues
+
+- Verify your documentation is in `data/corpus/`
+- Check Groq API key configuration
+- Ensure ChromaDB is properly initialized
+
+#### Database Issues
+
+- Check database file permissions
+- Verify SQLite installation
+- Review database schema migrations
+
+### Troubleshooting
+
+```bash
+# Check system status
+python apps/agent/main.py --mode status
+
+# Verify configuration
+python -c "from dotenv import load_dotenv; load_dotenv(); print('Config loaded')"
+
+# Test individual components
+python test_reddit_posting.py
+python test_rag_simple.py
+```
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 👥 Team
+
+- **Benny Perumalla** - _Lead Developer_ - [benny01r@gmail.com](mailto:benny01r@gmail.com)
+- **Md. Irshad Siddi** - _Backend Developer_ - [mohammadirshadsiddi@gmail.com](mailto:mohammadirshadsiddi@gmail.com)
+- **Sukesh Reddy** - _Frontend Developer_ - [lyricsofsongs96@gmail.com](mailto:lyricsofsongs96@gmail.com)
+- **Hareeswar Reddy** - _DevOps Engineer_ - [ahreddy05@gmail.com](mailto:ahreddy05@gmail.com)
+
+-This project was submitted in AgentHack 2025
+## 🙏 Acknowledgments
+
+- [Portia AI](https://portia.ai) for the agent orchestration framework
+- [Reddit](https://reddit.com) for the API access
+- [Groq](https://groq.com) for fast LLM inference
+- [Streamlit](https://streamlit.io) for the web interface
+- [LangChain](https://langchain.com) for RAG implementation
+- [ChromaDB](https://chromadb.com) for vector storage
+
+---
+
+<div align="center">
+
+**Built with ❤️ for the Open Source Community**
+
+[⭐ Star this repo](https://github.com/BennyPerumalla/oss-community-agent) | [🐛 Report Bug](https://github.com/BennyPerumalla/oss-community-agent/issues) | [💡 Request Feature](https://github.com/BennyPerumalla/oss-community-agent/issues)
+
+</div>
