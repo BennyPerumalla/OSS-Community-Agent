@@ -18,7 +18,12 @@ def main():
     ui_dir = project_root / "apps" / "ui"
     
     # Change to the UI directory
-    os.chdir(ui_dir)
+    try:
+        os.chdir(ui_dir)
+    except OSError as e:
+        print(f"❌ Error changing to UI directory: {e}")
+        print(f"📁 UI directory path: {ui_dir}")
+        return
     
     # Check for root .env file
     env_file = project_root / ".env"

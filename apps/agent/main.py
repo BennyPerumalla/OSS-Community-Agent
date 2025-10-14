@@ -206,7 +206,7 @@ class ModerationTool(Tool):
                     "safety_score": 0.0
                 }
             
-            moderation_result = analyze_text(content) if analyze_text else None
+            moderation_result = ModerationTool_analyze_text(content) if ModerationTool_analyze_text else None
             
             if moderation_result and isinstance(moderation_result, dict):
                 return {

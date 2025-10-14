@@ -75,7 +75,31 @@ The OSS Community Auto-Responder is a **human-in-the-loop AI agent** that:
 - **Database Persistence**: SQLite-based request and response tracking
 - **Configuration Management**: Environment-based settings
 
-## Core Components
+## 🏗️ Architecture
+
+```mermaid
+graph TB
+    A[Reddit API] --> B[Reddit Tool]
+    C[Project Docs] --> D[RAG Tool]
+    E[Portia AI] --> F[Agent Orchestration]
+
+    B --> G[Approval Workflow]
+    D --> G
+    F --> G
+
+    G --> H[Admin Review]
+    H --> I{Approved?}
+    I -->|Yes| J[Post to Reddit]
+    I -->|No| K[Reject/Edit]
+
+    G --> L[Database]
+    J --> L
+    K --> L
+
+    L --> M[Analytics Dashboard]
+```
+
+### Core Components
 
 - **Agent Layer**: Portia AI orchestration and workflow management
 - **Tool Ecosystem**: Reddit integration, RAG system, and moderation tools
@@ -357,7 +381,6 @@ python run_ui.py
 - Write comprehensive docstrings
 - Include tests for new features
 
-
 ## 🆘 Support
 
 ### Getting Help
@@ -412,6 +435,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Hareeswar Reddy** - _DevOps Engineer_ - [ahreddy05@gmail.com](mailto:ahreddy05@gmail.com)
 
 -This project was submitted in AgentHack 2025
+
 ## 🙏 Acknowledgments
 
 - [Portia AI](https://portia.ai) for the agent orchestration framework

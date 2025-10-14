@@ -53,7 +53,8 @@ def analyze_text(text: str) -> Dict[str, Any]:
     """
     report = {
         "is_flagged": False,
-        "flags": []
+        "flags": [],
+        "safety_score": 1.0
     }
 
     # Normalize input
@@ -90,6 +91,7 @@ def check_profanity(text: str, report: Dict[str, Any]):
         
         severity = "high" if is_severe else "low"
         report["is_flagged"] = True if is_severe else report.get("is_flagged", False)
+        report["safety_score"] = 0.3 if is_severe else 0.7  # Lower score for profanity
         report["flags"].append({
             "type": "profanity", 
             "severity": severity,
@@ -124,6 +126,12 @@ def check_pii(text: str, report: Dict[str, Any]):
         # Flag as high priority if high-confidence PII detected
         high_confidence = any(item["confidence"] > 0.7 for item in pii_found)
         report["is_flagged"] = True if high_confidence else report.get("is_flagged", False)
+        
+        # Update safety score based on PII confidence
+        if high_confidence:
+            report["safety_score"] = min(report.get("safety_score", 1.0), 0.2)  # Very low for high-confidence PII
+        else:
+            report["safety_score"] = min(report.get("safety_score", 1.0), 0.6)  # Moderate for low-confidence PII
         
         for item in pii_found:
             report["flags"].append({
